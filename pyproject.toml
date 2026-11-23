@@ -1,0 +1,27 @@
+[project]
+name = "fahrrad-analyse"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Daniel Roca Gonzalez", email = "daniel.roca.gonzalez@proton.me" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "ckanapi>=4.11",
+    "folium>=1.0.0",
+    "ipykernel>=7.4.0",
+    "ipywidgets>=8.1.9",
+    "jupyterlab>=4.6.6",
+    "pandas>=3.1.1",
+    "polars>=2.1.0",
+    "scikit-learn>=1.9.1",
+    "seaborn>=0.13.2",
+]
+
+[project.scripts]
+fahrrad-analyse = "fahrrad_analyse:main"
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14.0"]
+build-backend = "uv_build"
