@@ -112,7 +112,7 @@ def prepare(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def main() -> None:
     hourly = fetch_all()
-    counts, sites = prepare(filter_full_coverage(hourly))
+    counts, sites = prepare(fiter_full_coverage(hourly))
     sites.to_csv(DATA / "location_data.csv")
     counts.to_csv(DATA / "counters.csv")
     print(f"{len(sites)} sites, {len(counts)} hourly rows written to {DATA}")
