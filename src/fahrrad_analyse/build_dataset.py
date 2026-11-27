@@ -7,6 +7,7 @@ Combines the non-exploratory steps of fetch_data.ipynb and prepare.ipynb:
    and no extreme outliers among their daily peaks.
 3. Drop the columns that carry no information.
 4. Split the site columns into their own table, one row per counter_site_id.
+5. Aggregate the hourly counts to daily minima, maxima and means per site.
 
 A site keeps its counter_site_id when its counter is replaced (new counter_serial),
 renamed (König-Karls-Brücke Barometer -> König-Karls-Brücke) or re-surveyed (Böblinger
@@ -14,7 +15,7 @@ Straße 9 m, Samaraweg 93 m). Those changes are not new stations, so the site ta
 holds the latest name and coordinates, and counter_serial stays in the hourly counts
 so device changes remain visible.
 
-Writes data/location_data.csv and data/counters_hourly.csv.
+Writes data/location_data.csv, data/counters_hourly.csv and data/counters_daily.csv.
 
 Run with:  uv run python -m fahrrad_analyse.build_dataset
 Set FAHRRAD_CONTACT to put a contact address in the User-Agent of downloads.
@@ -179,13 +180,34 @@ def prepare(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return counts, sites
 
 
+def daily_stats(counts: pd.DataFrame) -> pd.DataFrame:
+    """Daily min, max and mean of every numeric feature per site and local day.
+
+    Days are local days (TIMEZONE) inside the coverage window, as in daily_peaks.
+    Columns are named <feature>_min, <feature>_max and <feature>_mean; a day with
+    only missing values for a feature gets NaN there.
+    """
+    features = counts.drop(columns=["counter_site_id"]).select_dtypes("number").columns
+    date = counts["datetime"].dt.tz_convert(TIMEZONE).dt.tz_localize(None).dt.normalize()
+    daily = (
+        counts.assign(date=date)
+        .groupby(["counter_site_id", "date"])[list(features)]
+        .agg(["min", "max", "mean"])
+    )
+    daily.columns = [f"{feature}_{stat}" for feature, stat in daily.columns]
+    daily = daily.reset_index()
+    return daily[daily["date"].between(COVERAGE_START, COVERAGE_END)].reset_index(drop=True)
+
+
 def main() -> None:
     hourly = fetch_all()
     hourly.to_csv(DATA / "counters_raw.csv")
     counts, sites = prepare(select_sites(hourly))
     sites.to_csv(DATA / "location_data.csv")
     counts.to_csv(DATA / "counters_hourly.csv")
-    print(f"{len(sites)} sites, {len(counts)} hourly rows written to {DATA}")
+    daily = daily_stats(counts)
+    daily.to_csv(DATA / "counters_daily.csv", index=False)
+    print(f"{len(sites)} sites, {len(counts)} hourly and {len(daily)} daily rows written to {DATA}")
 
 
 if __name__ == "__main__":

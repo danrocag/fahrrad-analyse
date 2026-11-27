@@ -21,6 +21,7 @@ dependencies = [
     "scipy>=1.18.1",
     "seaborn>=0.13.2",
     "statsmodels>=0.15.0",
+    "wetterdienst>=0.200.0",
 ]
 
 [project.scripts]
